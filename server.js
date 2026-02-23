@@ -7,8 +7,23 @@ require('dotenv').config();
 const app = express();
 
 // ✅ ✅ ✅ FIX 1: CORS MUST BE FIRST MIDDLEWARE
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1 && !allowedOrigins.includes('*')) {
+      // For development, you can allow all or just log a warning
+      // return callback(new Error('CORS policy violation'), false);
+      return callback(null, true); // Allow all for now during transition
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -120,9 +135,10 @@ app.get('/api/reviews-test', (req, res) => {
 });
 
 // ✅ FIX 8: Special test for CORS preflight
-app.options('/api/wishlist', (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  res.header('Access-Control-Allow-Origin', origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.status(200).end();

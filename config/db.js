@@ -8,6 +8,9 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false
+  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -32,8 +35,8 @@ const testConnection = async () => {
 const execute = (...args) => promisePool.execute(...args);
 const query = (...args) => promisePool.query(...args);
 
-module.exports = { 
-  pool: promisePool, 
+module.exports = {
+  pool: promisePool,
   testConnection,
   execute,
   query
