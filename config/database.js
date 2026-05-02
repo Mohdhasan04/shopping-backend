@@ -6,8 +6,12 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'organic_beauty',
+  database: process.env.DB_NAME || 'organic_beauty_db',
   port: process.env.DB_PORT || 3306,
+  ssl: {
+    minVersion: 'TLSv1.2',
+    rejectUnauthorized: true
+  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -33,8 +37,8 @@ const testConnection = async () => {
 const execute = (...args) => promisePool.execute(...args);
 const query = (...args) => promisePool.query(...args);
 
-module.exports = { 
-  pool: promisePool, 
+module.exports = {
+  pool: promisePool,
   testConnection,
   execute,
   query

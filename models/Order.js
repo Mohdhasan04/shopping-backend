@@ -6,7 +6,7 @@ class Order {
   static async create(orderData) {
     try {
       console.log('📦 [Order.create] Creating order...');
-      
+
       const {
         user_id,
         shipping_address,
@@ -20,7 +20,7 @@ class Order {
         expected_delivery_date
       } = orderData;
 
-      const expectedDate = expected_delivery_date || 
+      const expectedDate = expected_delivery_date ||
         new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
       // ✅ FIXED INSERT QUERY
@@ -31,7 +31,7 @@ class Order {
           tracking_number, expected_delivery_date, created_at
         ) VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `;
-      
+
       const values = [
         user_id || null,
         parseFloat(total_amount) || 0,
@@ -47,10 +47,10 @@ class Order {
 
       const [orderResult] = await db.execute(query, values);
       const orderId = orderResult.insertId;
-      
+
       console.log('✅ Order created with ID:', orderId);
       console.log('🔍 MySQL insertId:', orderResult.insertId);
-      
+
       // Insert order items
       if (orderData.items && orderData.items.length > 0) {
         for (const item of orderData.items) {
@@ -58,10 +58,10 @@ class Order {
             `INSERT INTO order_items (order_id, product_id, product_name, quantity, price) 
              VALUES (?, ?, ?, ?, ?)`,
             [
-              orderId, 
-              item.product_id, 
-              item.product_name || 'Product', 
-              item.quantity, 
+              orderId,
+              item.product_id,
+              item.product_name || 'Product',
+              item.quantity,
               parseFloat(item.price) || 0
             ]
           );
@@ -80,7 +80,7 @@ class Order {
   static async findById(orderId) {
     try {
       console.log('🔍 [Order.findById] Finding order:', orderId);
-      
+
       const [orders] = await db.execute(
         `SELECT 
           o.id,
@@ -107,7 +107,7 @@ class Order {
       if (orders.length === 0) return null;
 
       const order = orders[0];
-      
+
       // Convert total_amount to number
       const processedOrder = {
         ...order,
@@ -120,7 +120,7 @@ class Order {
         `SELECT 
           oi.*, 
           p.name as product_name, 
-          p.image,
+          p.image as product_image,
           c.name as category_name,
           COALESCE(oi.item_status, o.order_status) as display_status
          FROM order_items oi
@@ -135,6 +135,7 @@ class Order {
         id: item.id,
         product_id: item.product_id,
         product_name: item.product_name,
+        image: item.image || item.product_image || item.item_image,
         product_image: item.image || item.product_image,
         category: item.category_name || 'Uncategorized',
         quantity: item.quantity,
@@ -158,7 +159,7 @@ class Order {
   static async findByUserId(userId) {
     try {
       console.log('🔍 [Order.findByUserId] Finding orders for user:', userId);
-      
+
       const [orders] = await db.execute(
         `SELECT 
           o.id,
@@ -196,7 +197,7 @@ class Order {
             `SELECT 
               oi.*, 
               p.name as product_name, 
-              p.image,
+              p.image as product_image,
               c.name as category_name,
               COALESCE(oi.item_status, o.order_status) as display_status
              FROM order_items oi
@@ -211,6 +212,7 @@ class Order {
             id: item.id,
             product_id: item.product_id,
             product_name: item.product_name,
+            image: item.image || item.product_image || item.item_image,
             product_image: item.image,
             category: item.category_name || 'Uncategorized',
             quantity: item.quantity,
@@ -218,7 +220,7 @@ class Order {
             item_status: item.display_status || order.order_status,
             tracking_id: item.tracking_id || null
           }));
-          
+
           return {
             ...order,
             items: processedItems
@@ -239,7 +241,7 @@ class Order {
   static async findByCustomerEmail(customerEmail) {
     try {
       console.log('🔍 [Order.findByCustomerEmail] Finding orders for email:', customerEmail);
-      
+
       const [orders] = await db.execute(
         `SELECT 
           o.id,
@@ -277,7 +279,7 @@ class Order {
             `SELECT 
               oi.*, 
               p.name as product_name, 
-              p.image,
+              p.image as product_image,
               c.name as category_name,
               COALESCE(oi.item_status, o.order_status) as display_status
              FROM order_items oi
@@ -292,6 +294,7 @@ class Order {
             id: item.id,
             product_id: item.product_id,
             product_name: item.product_name,
+            image: item.image || item.product_image || item.item_image,
             product_image: item.image,
             category: item.category_name || 'Uncategorized',
             quantity: item.quantity,
@@ -299,7 +302,7 @@ class Order {
             item_status: item.display_status || order.order_status,
             tracking_id: item.tracking_id || null
           }));
-          
+
           return {
             ...order,
             items: processedItems
@@ -320,7 +323,7 @@ class Order {
   static async findAll() {
     try {
       console.log('🔍 [Order.findAll] Finding all orders...');
-      
+
       const [orders] = await db.execute(
         `SELECT 
           o.id,
@@ -357,7 +360,7 @@ class Order {
             `SELECT 
               oi.*, 
               p.name as product_name, 
-              p.image,
+              p.image as product_image,
               c.name as category_name,
               COALESCE(oi.item_status, o.order_status) as display_status
              FROM order_items oi
@@ -372,6 +375,7 @@ class Order {
             id: item.id,
             product_id: item.product_id,
             product_name: item.product_name,
+            image: item.image || item.product_image || item.item_image,
             product_image: item.image,
             category: item.category_name || 'Uncategorized',
             quantity: item.quantity,
@@ -379,7 +383,7 @@ class Order {
             item_status: item.display_status || order.order_status,
             tracking_id: item.tracking_id || null
           }));
-          
+
           return {
             ...order,
             items: processedItems
