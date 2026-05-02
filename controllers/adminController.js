@@ -129,7 +129,13 @@ const getOrders = async (req, res) => {
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
-      GROUP BY o.id
+      GROUP BY 
+        o.id, o.user_id, o.items, o.total_amount, o.payment_status, 
+        o.payment_method, o.order_status, o.shipping_address, 
+        o.customer_name, o.customer_email, o.customer_phone, 
+        o.created_at, o.updated_at, o.cancellation_reason, 
+        o.expected_delivery_date, o.tracking_number, o.shipped_at, 
+        o.delivered_at, u.name
       ORDER BY o.created_at DESC
     `);
 
@@ -632,11 +638,21 @@ const getSalesReport = async (req, res) => {
       ORDER BY date
     `, [startDate, endDate]);
 
+    // Get recent orders for dashboard
+    const [recentOrders] = await db.execute(`
+      SELECT o.*, u.name as user_name
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      ORDER BY o.created_at DESC
+      LIMIT 10
+    `);
+
     console.log('✅ Report generated successfully:', {
       totalSales: currentSales,
       totalOrders: currentOrders,
       topProductsCount: topProducts.length,
-      categorySalesCount: categorySales.length
+      categorySalesCount: categorySales.length,
+      recentOrdersCount: recentOrders.length
     });
 
     res.json({
@@ -680,6 +696,15 @@ const getSalesReport = async (req, res) => {
           orders: parseInt(d.orders) || 0,
           sales: parseFloat(d.sales) || 0,
           items: parseInt(d.items) || 0
+        })),
+
+        // Recent orders
+        recent_orders: recentOrders.map(o => ({
+          id: o.id,
+          customer_name: o.customer_name || o.user_name || 'Customer',
+          total_amount: parseFloat(o.total_amount) || 0,
+          order_status: o.order_status,
+          created_at: o.created_at
         })),
         
         // Metadata
